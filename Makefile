@@ -14,6 +14,7 @@ endif
 
 DEBUG ?= 0
 V ?= 0
+RUN_WATCH ?= 1
 PULSE ?= 1
 
 CFLAGS+=-Wall -Wshadow -Wpointer-arith -Wcast-qual -Wsign-compare
@@ -85,6 +86,12 @@ OBJS:=$(filter-out src/pulse.o, $(OBJS))
 LIBS:=$(filter-out -lpulse, $(LIBS))
 else
 CPPFLAGS += -DPULSE
+endif
+
+ifeq ($(RUN_WATCH),0)
+OBJS:=$(filter-out src/process_runs.o src/print_run_watch.o, $(OBJS))
+else
+CPPFLAGS += -DRUN_WATCH
 endif
 
 src/%.o: src/%.c include/i3status.h

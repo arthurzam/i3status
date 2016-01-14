@@ -296,7 +296,7 @@ int main(int argc, char *argv[]) {
         CFG_COLOR_OPTS("#00FF00", "#FFFF00", "#FF0000"),
         CFG_STR("markup", "none", CFGF_NONE),
         CFG_END()};
-
+#ifdef RUN_WATCH
     cfg_opt_t run_watch_opts[] = {
         CFG_STR("pidfile", NULL, CFGF_NONE),
         CFG_STR("format", "%title: %status", CFGF_NONE),
@@ -305,7 +305,7 @@ int main(int argc, char *argv[]) {
         CFG_CUSTOM_COLOR_OPTS,
         CFG_CUSTOM_MIN_WIDTH_OPT,
         CFG_END()};
-
+#endif
     cfg_opt_t path_exists_opts[] = {
         CFG_STR("path", NULL, CFGF_NONE),
         CFG_STR("format", "%title: %status", CFGF_NONE),
@@ -424,7 +424,9 @@ int main(int argc, char *argv[]) {
     cfg_opt_t opts[] = {
         CFG_STR_LIST("order", "{}", CFGF_NONE),
         CFG_SEC("general", general_opts, CFGF_NONE),
+#ifdef RUN_WATCH
         CFG_SEC("run_watch", run_watch_opts, CFGF_TITLE | CFGF_MULTI),
+#endif
         CFG_SEC("path_exists", path_exists_opts, CFGF_TITLE | CFGF_MULTI),
         CFG_SEC("wireless", wireless_opts, CFGF_TITLE | CFGF_MULTI),
         CFG_SEC("ethernet", ethernet_opts, CFGF_TITLE | CFGF_MULTI),
@@ -630,13 +632,13 @@ int main(int argc, char *argv[]) {
                 print_battery_info(json_gen, buffer, atoi(title), cfg_getstr(sec, "path"), cfg_getstr(sec, "format"), cfg_getstr(sec, "format_down"), cfg_getstr(sec, "status_chr"), cfg_getstr(sec, "status_bat"), cfg_getstr(sec, "status_full"), cfg_getint(sec, "low_threshold"), cfg_getstr(sec, "threshold_type"), cfg_getbool(sec, "last_full_capacity"), cfg_getbool(sec, "integer_battery_capacity"), cfg_getbool(sec, "hide_seconds"));
                 SEC_CLOSE_MAP;
             }
-
+#ifdef RUN_WATCH
             CASE_SEC_TITLE("run_watch") {
                 SEC_OPEN_MAP("run_watch");
                 print_run_watch(json_gen, buffer, title, cfg_getstr(sec, "pidfile"), cfg_getstr(sec, "format"), cfg_getstr(sec, "format_down"));
                 SEC_CLOSE_MAP;
             }
-
+#endif
             CASE_SEC_TITLE("path_exists") {
                 SEC_OPEN_MAP("path_exists");
                 print_path_exists(json_gen, buffer, title, cfg_getstr(sec, "path"), cfg_getstr(sec, "format"), cfg_getstr(sec, "format_down"));
