@@ -60,7 +60,7 @@ void print_volume(yajl_gen json_gen, char *buffer, const char *fmt, const char *
         free(instance);
     }
 
-#ifndef __OpenBSD__
+#if !defined(__OpenBSD__) && defined(PULSE)
     /* Try PulseAudio first */
 
     /* If the device name has the format "pulse[:N]" where N is the

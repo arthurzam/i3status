@@ -12,8 +12,11 @@ ifndef SYSCONFDIR
   endif
 endif
 
+DEBUG ?= 0
+V ?= 0
+PULSE ?= 1
+
 CFLAGS+=-Wall -Wshadow -Wpointer-arith -Wcast-qual -Wsign-compare
-CFLAGS+=-g
 CFLAGS+=-std=gnu99
 CFLAGS+=-pedantic
 CPPFLAGS+=-DSYSCONFDIR=\"$(SYSCONFDIR)\"
@@ -24,6 +27,9 @@ LIBS+=-lyajl
 LIBS+=-lpulse
 LIBS+=-lm
 LIBS+=-lpthread
+ifeq ($(DEBUG),1)
+CFLAGS+=-g
+endif
 
 VERSION:=$(shell git describe --tags --abbrev=0)
 GIT_VERSION:="$(shell git describe --tags --always) ($(shell git log --pretty=format:%cd --date=short -n1))"
@@ -50,13 +56,16 @@ ifeq ($(OS),NetBSD)
 LIBS+=-lprop
 endif
 
+ifeq ($(OS),OpenBSD)
+LIBS+=-lpthread
+endif
+
 # This probably applies for any pkgsrc based system
 ifneq (, $(filter $(OS), NetBSD DragonFly))
 CFLAGS+=-I/usr/pkg/include/
 LDFLAGS+=-L/usr/pkg/lib/
 endif
 
-V ?= 0
 ifeq ($(V),0)
 # Don’t print command lines which are run
 .SILENT:
@@ -71,9 +80,11 @@ CFLAGS += -idirafter yajl-fallback
 OBJS:=$(wildcard src/*.c *.c)
 OBJS:=$(OBJS:.c=.o)
 
-ifeq ($(OS),OpenBSD)
+ifeq ($(PULSE),0)
 OBJS:=$(filter-out src/pulse.o, $(OBJS))
 LIBS:=$(filter-out -lpulse, $(LIBS))
+else
+CPPFLAGS += -DPULSE
 endif
 
 src/%.o: src/%.c include/i3status.h
