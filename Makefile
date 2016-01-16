@@ -16,6 +16,7 @@ DEBUG ?= 0
 V ?= 0
 RUN_WATCH ?= 1
 PULSE ?= 1
+BRIGHTNESS ?= 1
 
 CFLAGS+=-Wall -Wshadow -Wpointer-arith -Wcast-qual -Wsign-compare
 CFLAGS+=-std=gnu99
@@ -30,6 +31,10 @@ LIBS+=-lm
 LIBS+=-lpthread
 ifeq ($(DEBUG),1)
 CFLAGS+=-g
+endif
+ifeq ($(BRIGHTNESS),1)
+CFLAGS += $(shell pkg-config --cflags xcb-randr xcb-atom xcb-aux xcb)
+LIBS += $(shell pkg-config --libs xcb-randr xcb-atom xcb-aux xcb)
 endif
 
 VERSION:=$(shell git describe --tags --abbrev=0)
@@ -93,6 +98,13 @@ OBJS:=$(filter-out src/process_runs.o src/print_run_watch.o, $(OBJS))
 else
 CPPFLAGS += -DRUN_WATCH
 endif
+
+ifeq ($(BRIGHTNESS),0)
+OBJS:=$(filter-out src/print_brightness.o, $(OBJS))
+else
+CPPFLAGS += -DBRIGHTNESS
+endif
+
 
 src/%.o: src/%.c include/i3status.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<

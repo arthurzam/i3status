@@ -420,6 +420,14 @@ int main(int argc, char *argv[]) {
         CFG_CUSTOM_COLOR_OPTS,
         CFG_CUSTOM_MIN_WIDTH_OPT,
         CFG_END()};
+#ifdef BRIGHTNESS
+    cfg_opt_t brightness_opts[] = {
+        CFG_STR("format", "☀: %brightness", CFGF_NONE),
+        CFG_CUSTOM_ALIGN_OPT,
+        CFG_CUSTOM_COLOR_OPTS,
+        CFG_CUSTOM_MIN_WIDTH_OPT,
+        CFG_END()};
+#endif
 
     cfg_opt_t opts[] = {
         CFG_STR_LIST("order", "{}", CFGF_NONE),
@@ -440,6 +448,9 @@ int main(int argc, char *argv[]) {
         CFG_SEC("ddate", ddate_opts, CFGF_NONE),
         CFG_SEC("load", load_opts, CFGF_NONE),
         CFG_SEC("cpu_usage", usage_opts, CFGF_NONE),
+#ifdef BRIGHTNESS
+        CFG_SEC("brightness", brightness_opts, CFGF_NONE),
+#endif
         CFG_END()};
 
     char *configfile = NULL;
@@ -684,7 +695,13 @@ int main(int argc, char *argv[]) {
                              cfg_getint(sec, "mixer_idx"));
                 SEC_CLOSE_MAP;
             }
-
+#ifdef BRIGHTNESS
+            CASE_SEC("brightness") {
+                SEC_OPEN_MAP("brightness");
+                print_brightness(json_gen, buffer, cfg_getstr(sec, "format"));
+                SEC_CLOSE_MAP;
+            }
+#endif
             CASE_SEC_TITLE("cpu_temperature") {
                 SEC_OPEN_MAP("cpu_temperature");
                 print_cpu_temperature_info(json_gen, buffer, atoi(title), cfg_getstr(sec, "path"), cfg_getstr(sec, "format"), cfg_getint(sec, "max_threshold"));

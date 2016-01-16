@@ -220,6 +220,9 @@ bool process_runs(const char *path);
 int volume_pulseaudio(uint32_t sink_idx);
 bool pulse_initialize(void);
 #endif
+#ifdef BRIGHTNESS
+void print_brightness(yajl_gen json_gen, char *buffer, const char *format);
+#endif
 
 /* socket file descriptor for general purposes */
 extern int general_socket;
