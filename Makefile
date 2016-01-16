@@ -17,6 +17,7 @@ V ?= 0
 RUN_WATCH ?= 1
 PULSE ?= 1
 BRIGHTNESS ?= 1
+LANGUAGE ?= 1
 
 CFLAGS+=-Wall -Wshadow -Wpointer-arith -Wcast-qual -Wsign-compare
 CFLAGS+=-std=gnu99
@@ -35,6 +36,10 @@ endif
 ifeq ($(BRIGHTNESS),1)
 CFLAGS += $(shell pkg-config --cflags xcb-randr xcb-atom xcb-aux xcb)
 LIBS += $(shell pkg-config --libs xcb-randr xcb-atom xcb-aux xcb)
+endif
+ifeq ($(LANGUAGE),1)
+CFLAGS += $(shell pkg-config --cflags x11)
+LIBS += $(shell pkg-config --libs x11)
 endif
 
 VERSION:=$(shell git describe --tags --abbrev=0)
@@ -105,6 +110,11 @@ else
 CPPFLAGS += -DBRIGHTNESS
 endif
 
+ifeq ($(LANGUAGE),0)
+OBJS:=$(filter-out src/print_language.o, $(OBJS))
+else
+CPPFLAGS += -DLANGUAGE
+endif
 
 src/%.o: src/%.c include/i3status.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<

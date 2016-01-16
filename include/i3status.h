@@ -223,6 +223,9 @@ bool pulse_initialize(void);
 #ifdef BRIGHTNESS
 void print_brightness(yajl_gen json_gen, char *buffer, const char *format);
 #endif
+#ifdef LANGUAGE
+void print_language(yajl_gen json_gen, char *buffer);
+#endif
 
 /* socket file descriptor for general purposes */
 extern int general_socket;
@@ -232,4 +235,6 @@ extern cfg_t *cfg, *cfg_general, *cfg_section;
 extern void **cur_instance;
 
 extern pthread_t main_thread;
+
+void *events_thread(void *args);
 #endif

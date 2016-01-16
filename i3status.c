@@ -316,7 +316,7 @@ int main(int argc, char *argv[]) {
         CFG_END()};
 
     cfg_opt_t wireless_opts[] = {
-        CFG_STR("format_up", "W: (%quality at %essid, %bitrate) %ip", CFGF_NONE),
+        CFG_STR("format_up", "W: (%quality - %essid) %ip", CFGF_NONE),
         CFG_STR("format_down", "W: down", CFGF_NONE),
         CFG_CUSTOM_ALIGN_OPT,
         CFG_CUSTOM_COLOR_OPTS,
@@ -324,7 +324,7 @@ int main(int argc, char *argv[]) {
         CFG_END()};
 
     cfg_opt_t ethernet_opts[] = {
-        CFG_STR("format_up", "E: %ip (%speed)", CFGF_NONE),
+        CFG_STR("format_up", "E: %ip", CFGF_NONE),
         CFG_STR("format_down", "E: down", CFGF_NONE),
         CFG_CUSTOM_ALIGN_OPT,
         CFG_CUSTOM_COLOR_OPTS,
@@ -412,7 +412,7 @@ int main(int argc, char *argv[]) {
 
     cfg_opt_t volume_opts[] = {
         CFG_STR("format", "♪: %volume", CFGF_NONE),
-        CFG_STR("format_muted", "♪: 0%%", CFGF_NONE),
+        CFG_STR("format_muted", "♪: muted (%volume)", CFGF_NONE),
         CFG_STR("device", "default", CFGF_NONE),
         CFG_STR("mixer", "Master", CFGF_NONE),
         CFG_INT("mixer_idx", 0, CFGF_NONE),
@@ -420,9 +420,18 @@ int main(int argc, char *argv[]) {
         CFG_CUSTOM_COLOR_OPTS,
         CFG_CUSTOM_MIN_WIDTH_OPT,
         CFG_END()};
+
 #ifdef BRIGHTNESS
     cfg_opt_t brightness_opts[] = {
         CFG_STR("format", "☀: %brightness", CFGF_NONE),
+        CFG_CUSTOM_ALIGN_OPT,
+        CFG_CUSTOM_COLOR_OPTS,
+        CFG_CUSTOM_MIN_WIDTH_OPT,
+        CFG_END()};
+#endif
+
+#ifdef LANGUAGE
+    cfg_opt_t language_opts[] = {
         CFG_CUSTOM_ALIGN_OPT,
         CFG_CUSTOM_COLOR_OPTS,
         CFG_CUSTOM_MIN_WIDTH_OPT,
@@ -450,6 +459,9 @@ int main(int argc, char *argv[]) {
         CFG_SEC("cpu_usage", usage_opts, CFGF_NONE),
 #ifdef BRIGHTNESS
         CFG_SEC("brightness", brightness_opts, CFGF_NONE),
+#endif
+#ifdef LANGUAGE
+        CFG_SEC("language", language_opts, CFGF_NONE),
 #endif
         CFG_END()};
 
@@ -564,7 +576,7 @@ int main(int argc, char *argv[]) {
     if (output_format == O_I3BAR) {
         /* Initialize the i3bar protocol. See i3/docs/i3bar-protocol
          * for details. */
-        printf("{\"version\":1}\n[\n");
+        printf("{\"version\":1, \"click_events\": true}\n[\n");
         fflush(stdout);
         yajl_gen_array_open(json_gen);
         yajl_gen_clear(json_gen);
@@ -699,6 +711,13 @@ int main(int argc, char *argv[]) {
             CASE_SEC("brightness") {
                 SEC_OPEN_MAP("brightness");
                 print_brightness(json_gen, buffer, cfg_getstr(sec, "format"));
+                SEC_CLOSE_MAP;
+            }
+#endif
+#ifdef LANGUAGE
+            CASE_SEC("language") {
+                SEC_OPEN_MAP("language");
+                print_language(json_gen, buffer);
                 SEC_CLOSE_MAP;
             }
 #endif

@@ -61,8 +61,7 @@ get_brightness()
 {
     float res = -1;
 
-    char    *dpy_name = NULL;
-    xcb_connection_t *conn;
+    static xcb_connection_t *conn = NULL;
     xcb_generic_error_t *error;
 
     xcb_randr_query_version_cookie_t ver_cookie;
@@ -73,22 +72,25 @@ get_brightness()
 
     xcb_screen_iterator_t iter;
 
-    conn = xcb_connect (dpy_name, NULL);
-    ver_cookie = xcb_randr_query_version (conn, 1, 2);
-    ver_reply = xcb_randr_query_version_reply (conn, ver_cookie, &error);
+    if(conn == NULL)
+    {
+        conn = xcb_connect (NULL, NULL);
+        ver_cookie = xcb_randr_query_version (conn, 1, 2);
+        ver_reply = xcb_randr_query_version_reply (conn, ver_cookie, &error);
 
-    if (error != NULL || ver_reply == NULL) {
-        int ec = error ? error->error_code : -1;
-        fprintf (stderr, "RANDR Query Version returned error %d\n", ec);
-        return -1;
+        if (error != NULL || ver_reply == NULL) {
+            int ec = error ? error->error_code : -1;
+            fprintf (stderr, "RANDR Query Version returned error %d\n", ec);
+            return -1;
+        }
+        if (ver_reply->major_version != 1 ||
+                ver_reply->minor_version < 2) {
+            fprintf (stderr, "RandR version %d.%d too old\n",
+                     ver_reply->major_version, ver_reply->minor_version);
+            return -1;
+        }
+        free (ver_reply);
     }
-    if (ver_reply->major_version != 1 ||
-        ver_reply->minor_version < 2) {
-        fprintf (stderr, "RandR version %d.%d too old\n",
-                 ver_reply->major_version, ver_reply->minor_version);
-        return -1;
-    }
-    free (ver_reply);
 
     backlight_cookie[0] = xcb_intern_atom (conn, 1, strlen("Backlight"), "Backlight");
     backlight_cookie[1] = xcb_intern_atom (conn, 1, strlen("BACKLIGHT"), "BACKLIGHT");
@@ -183,11 +185,13 @@ void print_brightness(yajl_gen json_gen, char *buffer, const char *format) {
         for (walk = format; *walk != '\0'; walk++) {
             if (*walk != '%') {
                 *(outwalk++) = *walk;
-                continue;
             }
-
-            if (BEGINS_WITH(walk + 1, "brightness")) {
-                (void)snprintf(brightstr, sizeof(brightstr), "%d%%", (int)bright);
+            else if (BEGINS_WITH(walk + 1, "%")) {
+                outwalk += sprintf(outwalk, "%s", pct_mark);
+                walk += strlen("%");
+            }
+            else if (BEGINS_WITH(walk + 1, "brightness")) {
+                (void)snprintf(brightstr, sizeof(brightstr), "%d%s", (int)bright, pct_mark);
                 maybe_escape_markup(brightstr, &outwalk);
                 walk += strlen("brightness");
             }
