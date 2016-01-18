@@ -603,6 +603,14 @@ int main(int argc, char *argv[]) {
 
     void **per_instance = calloc(cfg_size(cfg, "order"), sizeof(*per_instance));
 
+    if (output_format == O_I3BAR) {
+        pthread_t _events_thread;
+        if(pthread_create(&_events_thread, NULL, events_thread, NULL)) {
+            fprintf(stderr, "Error creating thread\n");
+            return 1;
+        }
+    }
+
     while (1) {
         if (exit_upon_signal) {
             fprintf(stderr, "Exiting due to signal.\n");

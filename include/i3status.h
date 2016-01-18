@@ -11,6 +11,12 @@ enum { O_DZEN2,
 enum { M_PANGO,
        M_NONE } markup_format;
 
+enum { MOUSE_LEFT = 1,
+       MOUSE_MIDDLE = 2,
+       MOUSE_RIGHT = 3,
+       MOUSE_WHEEL_UP = 4,
+       MOUSE_WHEEL_DOWN = 5 } mouse_event;
+
 char *pct_mark;
 
 #include <stdbool.h>
@@ -237,4 +243,6 @@ extern void **cur_instance;
 extern pthread_t main_thread;
 
 void *events_thread(void *args);
+
+void mouse_volume(int event, const char *device, const char *mixer, int mixer_idx);
 #endif

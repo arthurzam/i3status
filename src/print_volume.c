@@ -48,6 +48,65 @@ static char *apply_volume_format(const char *fmt, char *outwalk, int ivolume) {
     return outwalk;
 }
 
+#ifdef LINUX
+static snd_mixer_t *m = NULL;
+static snd_mixer_selem_id_t *sid = NULL;
+static snd_mixer_elem_t *elem = NULL;
+
+static bool init_volume_mixer(const char *device, const char *mixer, int mixer_idx) {
+    int err;
+    if(m == NULL) {
+        if ((err = snd_mixer_open(&m, 0)) < 0) {
+            fprintf(stderr, "i3status: ALSA: Cannot open mixer: %s\n", snd_strerror(err));
+            return false;
+        }
+
+        /* Attach this mixer handle to the given device */
+        if ((err = snd_mixer_attach(m, device)) < 0) {
+            fprintf(stderr, "i3status: ALSA: Cannot attach mixer to device: %s\n", snd_strerror(err));
+            snd_mixer_close(m);
+            m = NULL;
+            return false;
+        }
+
+        /* Register this mixer */
+        if ((err = snd_mixer_selem_register(m, NULL, NULL)) < 0) {
+            fprintf(stderr, "i3status: ALSA: snd_mixer_selem_register: %s\n", snd_strerror(err));
+            snd_mixer_close(m);
+            m = NULL;
+            return false;
+        }
+
+        if ((err = snd_mixer_load(m)) < 0) {
+            fprintf(stderr, "i3status: ALSA: snd_mixer_load: %s\n", snd_strerror(err));
+            snd_mixer_close(m);
+            m = NULL;
+            return false;
+        }
+
+        snd_mixer_selem_id_malloc(&sid);
+        if (sid == NULL) {
+            snd_mixer_close(m);
+            m = NULL;
+            return false;
+        }
+        /* Find the given mixer */
+        snd_mixer_selem_id_set_index(sid, mixer_idx);
+        snd_mixer_selem_id_set_name(sid, mixer);
+        if (!(elem = snd_mixer_find_selem(m, sid))) {
+            fprintf(stderr, "i3status: ALSA: Cannot find mixer %s (index %i)\n",
+                    snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid));
+            snd_mixer_close(m);
+            m = NULL;
+            snd_mixer_selem_id_free(sid);
+            sid = NULL;
+            return false;
+        }
+    }
+    return true;
+}
+#endif
+
 void print_volume(yajl_gen json_gen, char *buffer, const char *fmt, const char *fmt_muted, const char *device, const char *mixer, int mixer_idx) {
     char *outwalk = buffer;
     int pbval = 1;
@@ -106,53 +165,12 @@ void print_volume(yajl_gen json_gen, char *buffer, const char *fmt, const char *
 
 #ifdef LINUX
     int err;
-    snd_mixer_t *m;
-    snd_mixer_selem_id_t *sid;
-    snd_mixer_elem_t *elem;
+
     long min, max, val;
     int avg;
 
-    if ((err = snd_mixer_open(&m, 0)) < 0) {
-        fprintf(stderr, "i3status: ALSA: Cannot open mixer: %s\n", snd_strerror(err));
+    if(!init_volume_mixer(device, mixer, mixer_idx))
         goto out;
-    }
-
-    /* Attach this mixer handle to the given device */
-    if ((err = snd_mixer_attach(m, device)) < 0) {
-        fprintf(stderr, "i3status: ALSA: Cannot attach mixer to device: %s\n", snd_strerror(err));
-        snd_mixer_close(m);
-        goto out;
-    }
-
-    /* Register this mixer */
-    if ((err = snd_mixer_selem_register(m, NULL, NULL)) < 0) {
-        fprintf(stderr, "i3status: ALSA: snd_mixer_selem_register: %s\n", snd_strerror(err));
-        snd_mixer_close(m);
-        goto out;
-    }
-
-    if ((err = snd_mixer_load(m)) < 0) {
-        fprintf(stderr, "i3status: ALSA: snd_mixer_load: %s\n", snd_strerror(err));
-        snd_mixer_close(m);
-        goto out;
-    }
-
-    snd_mixer_selem_id_malloc(&sid);
-    if (sid == NULL) {
-        snd_mixer_close(m);
-        goto out;
-    }
-
-    /* Find the given mixer */
-    snd_mixer_selem_id_set_index(sid, mixer_idx);
-    snd_mixer_selem_id_set_name(sid, mixer);
-    if (!(elem = snd_mixer_find_selem(m, sid))) {
-        fprintf(stderr, "i3status: ALSA: Cannot find mixer %s (index %i)\n",
-                snd_mixer_selem_id_get_name(sid), snd_mixer_selem_id_get_index(sid));
-        snd_mixer_close(m);
-        snd_mixer_selem_id_free(sid);
-        goto out;
-    }
 
     /* Get the volume range to convert the volume later */
     snd_mixer_selem_get_playback_volume_range(elem, &min, &max);
@@ -175,9 +193,6 @@ void print_volume(yajl_gen json_gen, char *buffer, const char *fmt, const char *
             fmt = fmt_muted;
         }
     }
-
-    snd_mixer_close(m);
-    snd_mixer_selem_id_free(sid);
 
     outwalk = apply_volume_format(fmt, outwalk, avg);
 
@@ -289,4 +304,49 @@ out:
     if (!pbval)
         END_COLOR;
     OUTPUT_FULL_TEXT(buffer);
+}
+
+void mouse_volume(int event, const char *device, const char *mixer, int mixer_idx) {
+#ifdef LINUX
+    int pbval;
+    int err;
+
+    long min, max, val, change;
+
+    if(!init_volume_mixer(device, mixer, mixer_idx))
+        return;
+
+    if(event == MOUSE_MIDDLE)
+    {
+        if (snd_mixer_selem_has_playback_switch(elem)) {
+            if ((err = snd_mixer_selem_get_playback_switch(elem, 0, &pbval)) < 0)
+                fprintf(stderr, "i3status: ALSA: playback_switch: %s\n", snd_strerror(err));
+            if ((err = snd_mixer_selem_set_playback_switch(elem, 0, !pbval)) < 0)
+                fprintf(stderr, "i3status: ALSA: playback_switch: %s\n", snd_strerror(err));
+        }
+    }
+    else if(event == MOUSE_WHEEL_UP || event == MOUSE_WHEEL_DOWN)
+    {
+        /* Get the volume range to convert the volume later */
+        snd_mixer_selem_get_playback_volume_range(elem, &min, &max);
+
+        snd_mixer_handle_events(m);
+        snd_mixer_selem_get_playback_volume(elem, 0, &val);
+
+        change = max * 3 / 100;
+        if(event == MOUSE_WHEEL_UP)
+        {
+            val += change;
+            if(val > max)
+                val = max;
+        }
+        else
+        {
+            val -= change;
+            if(val < 0)
+                val = 0;
+        }
+        snd_mixer_selem_set_playback_volume(elem, 0, val);
+    }
+#endif
 }
