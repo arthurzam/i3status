@@ -242,7 +242,7 @@ static char *get_config_path(void) {
     free(config_path);
 
     /* 3: check the traditional path under /etc */
-    config_path = SYSCONFDIR "/i3status.conf";
+    config_path = "/etc/i3status.conf";
     if (path_exists(config_path))
         return sstrdup(config_path);
 
@@ -369,13 +369,13 @@ int main(int argc, char *argv[]) {
         CFG_CUSTOM_ALIGN_OPT,
         CFG_CUSTOM_MIN_WIDTH_OPT,
         CFG_END()};
-
+#ifdef DDATE
     cfg_opt_t ddate_opts[] = {
         CFG_STR("format", "%{%a, %b %d%}, %Y%N - %H", CFGF_NONE),
         CFG_CUSTOM_ALIGN_OPT,
         CFG_CUSTOM_MIN_WIDTH_OPT,
         CFG_END()};
-
+#endif
     cfg_opt_t load_opts[] = {
         CFG_STR("format", "%1min %5min %15min", CFGF_NONE),
         CFG_FLOAT("max_threshold", 5, CFGF_NONE),
@@ -389,7 +389,7 @@ int main(int argc, char *argv[]) {
         CFG_CUSTOM_ALIGN_OPT,
         CFG_CUSTOM_MIN_WIDTH_OPT,
         CFG_END()};
-
+#ifdef TEMPERATURE
     cfg_opt_t temp_opts[] = {
         CFG_STR("format", "%degrees C", CFGF_NONE),
         CFG_STR("path", NULL, CFGF_NONE),
@@ -398,7 +398,8 @@ int main(int argc, char *argv[]) {
         CFG_CUSTOM_COLOR_OPTS,
         CFG_CUSTOM_MIN_WIDTH_OPT,
         CFG_END()};
-
+#endif
+#ifdef DISK_INFO
     cfg_opt_t disk_opts[] = {
         CFG_STR("format", "%free", CFGF_NONE),
         CFG_STR("format_not_mounted", NULL, CFGF_NONE),
@@ -409,6 +410,7 @@ int main(int argc, char *argv[]) {
         CFG_CUSTOM_COLOR_OPTS,
         CFG_CUSTOM_MIN_WIDTH_OPT,
         CFG_END()};
+#endif
 
     cfg_opt_t volume_opts[] = {
         CFG_STR("format", "♪: %volume", CFGF_NONE),
@@ -423,7 +425,7 @@ int main(int argc, char *argv[]) {
 
 #ifdef BRIGHTNESS
     cfg_opt_t brightness_opts[] = {
-        CFG_STR("format", "☀: %brightness", CFGF_NONE),
+        CFG_STR("format", "☀ %brightness", CFGF_NONE),
         CFG_CUSTOM_ALIGN_OPT,
         CFG_CUSTOM_COLOR_OPTS,
         CFG_CUSTOM_MIN_WIDTH_OPT,
@@ -448,13 +450,19 @@ int main(int argc, char *argv[]) {
         CFG_SEC("wireless", wireless_opts, CFGF_TITLE | CFGF_MULTI),
         CFG_SEC("ethernet", ethernet_opts, CFGF_TITLE | CFGF_MULTI),
         CFG_SEC("battery", battery_opts, CFGF_TITLE | CFGF_MULTI),
+#ifdef TEMPERATURE
         CFG_SEC("cpu_temperature", temp_opts, CFGF_TITLE | CFGF_MULTI),
+#endif
+#ifdef DISK_INFO
         CFG_SEC("disk", disk_opts, CFGF_TITLE | CFGF_MULTI),
+#endif
         CFG_SEC("volume", volume_opts, CFGF_TITLE | CFGF_MULTI),
         CFG_SEC("ipv6", ipv6_opts, CFGF_NONE),
         CFG_SEC("time", time_opts, CFGF_NONE),
         CFG_SEC("tztime", tztime_opts, CFGF_TITLE | CFGF_MULTI),
+#ifdef DDATE
         CFG_SEC("ddate", ddate_opts, CFGF_NONE),
+#endif
         CFG_SEC("load", load_opts, CFGF_NONE),
         CFG_SEC("cpu_usage", usage_opts, CFGF_NONE),
 #ifdef BRIGHTNESS
@@ -675,13 +683,13 @@ int main(int argc, char *argv[]) {
                 print_path_exists(json_gen, buffer, title, cfg_getstr(sec, "path"), cfg_getstr(sec, "format"), cfg_getstr(sec, "format_down"));
                 SEC_CLOSE_MAP;
             }
-
+#ifdef DISK_INFO
             CASE_SEC_TITLE("disk") {
                 SEC_OPEN_MAP("disk_info");
                 print_disk_info(json_gen, buffer, title, cfg_getstr(sec, "format"), cfg_getstr(sec, "format_not_mounted"), cfg_getstr(sec, "prefix_type"), cfg_getstr(sec, "threshold_type"), cfg_getfloat(sec, "low_threshold"));
                 SEC_CLOSE_MAP;
             }
-
+#endif
             CASE_SEC("load") {
                 SEC_OPEN_MAP("load");
                 print_load(json_gen, buffer, cfg_getstr(sec, "format"), cfg_getfloat(sec, "max_threshold"));
@@ -699,13 +707,13 @@ int main(int argc, char *argv[]) {
                 print_time(json_gen, buffer, title, cfg_getstr(sec, "format"), cfg_getstr(sec, "timezone"), cfg_getstr(sec, "format_time"), tv.tv_sec);
                 SEC_CLOSE_MAP;
             }
-
+#ifdef DDATE
             CASE_SEC("ddate") {
                 SEC_OPEN_MAP("ddate");
                 print_ddate(json_gen, buffer, cfg_getstr(sec, "format"), tv.tv_sec);
                 SEC_CLOSE_MAP;
             }
-
+#endif
             CASE_SEC_TITLE("volume") {
                 SEC_OPEN_MAP("volume");
                 print_volume(json_gen, buffer, cfg_getstr(sec, "format"),
@@ -729,11 +737,13 @@ int main(int argc, char *argv[]) {
                 SEC_CLOSE_MAP;
             }
 #endif
+#ifdef TEMPERATURE
             CASE_SEC_TITLE("cpu_temperature") {
                 SEC_OPEN_MAP("cpu_temperature");
                 print_cpu_temperature_info(json_gen, buffer, atoi(title), cfg_getstr(sec, "path"), cfg_getstr(sec, "format"), cfg_getint(sec, "max_threshold"));
                 SEC_CLOSE_MAP;
             }
+#endif
 
             CASE_SEC("cpu_usage") {
                 SEC_OPEN_MAP("cpu_usage");

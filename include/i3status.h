@@ -37,6 +37,7 @@ char *pct_mark;
 #define DECOMPOSE_VOLUME(cvol) ((cvol) & ~(1 << 30))
 #define DECOMPOSE_MUTED(cvol) (((cvol) & (1 << 30)) != 0)
 
+#ifdef TEMPERATURE
 #if defined(LINUX)
 
 #define THERMAL_ZONE "/sys/class/thermal/thermal_zone%d/temp"
@@ -64,7 +65,7 @@ char *pct_mark;
 #include <sys/param.h>
 
 #endif
-
+#endif
 /* Allows for the definition of a variable without opening a new scope, thus
  * suited for usage in a macro. Idea from wmii. */
 #define with(type, var, init) \
@@ -204,17 +205,23 @@ typedef enum {
 const char *first_eth_interface(const net_type_t type);
 
 void print_ipv6_info(yajl_gen json_gen, char *buffer, const char *format_up, const char *format_down);
+#ifdef DISK_INFO
 void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format, const char *format_not_mounted, const char *prefix_type, const char *threshold_type, const double low_threshold);
+#endif
 void print_battery_info(yajl_gen json_gen, char *buffer, int number, const char *path, const char *format, const char *format_down, const char *status_chr, const char *status_bat, const char *status_full, int low_threshold, char *threshold_type, bool last_full_capacity, bool integer_battery_capacity, bool hide_seconds);
 void print_time(yajl_gen json_gen, char *buffer, const char *title, const char *format, const char *tz, const char *format_time, time_t t);
+#ifdef DDATE
 void print_ddate(yajl_gen json_gen, char *buffer, const char *format, time_t t);
+#endif
 const char *get_ip_addr(const char *interface);
 void print_wireless_info(yajl_gen json_gen, char *buffer, const char *interface, const char *format_up, const char *format_down);
 #ifdef RUN_WATCH
 void print_run_watch(yajl_gen json_gen, char *buffer, const char *title, const char *pidfile, const char *format, const char *format_down);
 #endif
 void print_path_exists(yajl_gen json_gen, char *buffer, const char *title, const char *path, const char *format, const char *format_down);
+#ifdef TEMPERATURE
 void print_cpu_temperature_info(yajl_gen json_gen, char *buffer, int zone, const char *path, const char *format, int);
+#endif
 void print_cpu_usage(yajl_gen json_gen, char *buffer, const char *format);
 void print_eth_info(yajl_gen json_gen, char *buffer, const char *interface, const char *format_up, const char *format_down);
 void print_load(yajl_gen json_gen, char *buffer, const char *format, const float max_threshold);

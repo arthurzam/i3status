@@ -22,14 +22,6 @@ void* events_thread(void* args)
     char name[512], instance[512];
     int button, x, y;
 
-    union {
-        struct {
-            char device[128];
-            char mixer[128];
-            int mixer_id;
-        } volume;
-    } temp_data;
-
     while(fgets(input, 2048, stdin))
     {
         walker = input;
@@ -72,10 +64,16 @@ void* events_thread(void* args)
 
         yajl_tree_free(node);
 
-        if(strcpy(name, "volume") == 0) {
-            // in "print_volume" the instance is changed!
-            sscanf(instance, "%s.%s.%d", temp_data.volume.device, temp_data.volume.mixer, &temp_data.volume.mixer_id);
-            mouse_volume(button, temp_data.volume.device, temp_data.volume.mixer, temp_data.volume.mixer_id);
+        if(strcmp(name, "volume") == 0) {
+            char* mixer = strchr(instance, '.');
+            if(mixer == NULL)
+                continue;
+            *(mixer++) = '\0';
+            char* mixer_id = strchr(mixer, '.');
+            if(mixer_id == NULL)
+                continue;
+            *(mixer_id++) = '\0';
+            mouse_volume(button, instance, mixer, atoi(mixer_id));
         }
     }
     return NULL;
