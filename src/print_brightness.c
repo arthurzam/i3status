@@ -13,10 +13,48 @@
 
 #include "i3status.h"
 
-static xcb_atom_t backlight, backlight_new, backlight_legacy;
+static xcb_atom_t backlight = XCB_NONE, backlight_new = XCB_NONE, backlight_legacy = XCB_NONE;
 
-static long
-backlight_get (xcb_connection_t *conn, xcb_randr_output_t output)
+static bool set_backlight_variables(xcb_connection_t *conn)
+{
+    xcb_intern_atom_cookie_t backlight_cookie[2];
+    xcb_intern_atom_reply_t *backlight_reply;
+    xcb_generic_error_t *error;
+
+    if (backlight_new != XCB_NONE || backlight_legacy != XCB_NONE)
+        return true;
+
+    backlight_cookie[0] = xcb_intern_atom (conn, 1, strlen("Backlight"), "Backlight");
+    backlight_cookie[1] = xcb_intern_atom (conn, 1, strlen("BACKLIGHT"), "BACKLIGHT");
+
+    backlight_reply = xcb_intern_atom_reply (conn, backlight_cookie[0], &error);
+    if (error != NULL || backlight_reply == NULL) {
+        int ec = error ? error->error_code : -1;
+        fprintf (stderr, "Intern Atom returned error %d\n", ec);
+        return false;
+    }
+
+    backlight_new = backlight_reply->atom;
+    free (backlight_reply);
+
+    backlight_reply = xcb_intern_atom_reply (conn, backlight_cookie[1], &error);
+    if (error != NULL || backlight_reply == NULL) {
+        int ec = error ? error->error_code : -1;
+        fprintf (stderr, "Intern Atom returned error %d\n", ec);
+        return false;
+    }
+
+    backlight_legacy = backlight_reply->atom;
+    free (backlight_reply);
+
+    if (backlight_new == XCB_NONE && backlight_legacy == XCB_NONE) {
+        fprintf (stderr, "No outputs have backlight property\n");
+        return false;
+    }
+    return true;
+}
+
+static long backlight_get (xcb_connection_t *conn, xcb_randr_output_t output)
 {
     xcb_generic_error_t *error;
     xcb_randr_get_output_property_reply_t *prop_reply = NULL;
@@ -56,8 +94,7 @@ backlight_get (xcb_connection_t *conn, xcb_randr_output_t output)
     return value;
 }
 
-static float
-get_brightness()
+static float get_brightness()
 {
     float res = -1;
 
@@ -66,9 +103,6 @@ get_brightness()
 
     xcb_randr_query_version_cookie_t ver_cookie;
     xcb_randr_query_version_reply_t *ver_reply;
-
-    xcb_intern_atom_cookie_t backlight_cookie[2];
-    xcb_intern_atom_reply_t *backlight_reply;
 
     xcb_screen_iterator_t iter;
 
@@ -92,33 +126,7 @@ get_brightness()
         free (ver_reply);
     }
 
-    backlight_cookie[0] = xcb_intern_atom (conn, 1, strlen("Backlight"), "Backlight");
-    backlight_cookie[1] = xcb_intern_atom (conn, 1, strlen("BACKLIGHT"), "BACKLIGHT");
-
-    backlight_reply = xcb_intern_atom_reply (conn, backlight_cookie[0], &error);
-    if (error != NULL || backlight_reply == NULL) {
-        int ec = error ? error->error_code : -1;
-        fprintf (stderr, "Intern Atom returned error %d\n", ec);
-        return -1;
-    }
-
-    backlight_new = backlight_reply->atom;
-    free (backlight_reply);
-
-    backlight_reply = xcb_intern_atom_reply (conn, backlight_cookie[1], &error);
-    if (error != NULL || backlight_reply == NULL) {
-        int ec = error ? error->error_code : -1;
-        fprintf (stderr, "Intern Atom returned error %d\n", ec);
-        return -1;
-    }
-
-    backlight_legacy = backlight_reply->atom;
-    free (backlight_reply);
-
-    if (backlight_new == XCB_NONE && backlight_legacy == XCB_NONE) {
-        fprintf (stderr, "No outputs have backlight property\n");
-        return -1;
-    }
+    set_backlight_variables(conn);
 
     iter = xcb_setup_roots_iterator (xcb_get_setup (conn));
 
@@ -161,6 +169,8 @@ get_brightness()
                     min = values[0];
                     max = values[1];
                     res = (cur - min) * 100 / (max - min);
+                    free (prop_reply);
+                    break;
                 }
                 free (prop_reply);
             }
@@ -177,7 +187,6 @@ void print_brightness(yajl_gen json_gen, char *buffer, const char *format) {
     const char *walk;
     char *outwalk = buffer;
 
-    char brightstr[64];
     float bright = get_brightness();
 
     if(bright != -1)
@@ -186,13 +195,8 @@ void print_brightness(yajl_gen json_gen, char *buffer, const char *format) {
             if (*walk != '%') {
                 *(outwalk++) = *walk;
             }
-            else if (BEGINS_WITH(walk + 1, "%")) {
-                outwalk += sprintf(outwalk, "%s", pct_mark);
-                walk += strlen("%");
-            }
             else if (BEGINS_WITH(walk + 1, "brightness")) {
-                (void)snprintf(brightstr, sizeof(brightstr), "%d%s", (int)bright, pct_mark);
-                maybe_escape_markup(brightstr, &outwalk);
+                outwalk += sprintf(outwalk, "%d%s", (int)bright, pct_mark);
                 walk += strlen("brightness");
             }
         }

@@ -113,10 +113,9 @@ void print_volume(yajl_gen json_gen, char *buffer, const char *fmt, const char *
 
     /* Printing volume works with ALSA and PulseAudio at the moment */
     if (output_format == O_I3BAR) {
-        char *instance;
-        asprintf(&instance, "%s.%s.%d", device, mixer, mixer_idx);
+        char instance[128];
+        snprintf(instance, sizeof(instance), "%s.%s.%d", device, mixer, mixer_idx);
         INSTANCE(instance);
-        free(instance);
     }
 
 #if !defined(__OpenBSD__) && defined(PULSE)

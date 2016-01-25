@@ -22,9 +22,8 @@ const char *first_eth_interface(const net_type_t type) {
     for (addrp = ifaddr;
          addrp != NULL;
          addrp = addrp->ifa_next) {
-        if (strncasecmp("lo", addrp->ifa_name, strlen("lo")) == 0)
-            continue;
-        if (addrp->ifa_addr == NULL)
+        if (addrp->ifa_addr == NULL ||
+            strncasecmp("lo", addrp->ifa_name, strlen("lo")) == 0)
             continue;
         // Skip PF_PACKET addresses (MAC addresses), as they are present on any
         // ethernet interface.

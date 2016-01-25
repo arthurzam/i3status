@@ -1,5 +1,6 @@
 #include <pthread.h>
 #include <yajl/yajl_tree.h>
+#include <stdlib.h>
 
 #include "i3status.h"
 
@@ -22,7 +23,7 @@ void* events_thread(void* args)
     char name[512], instance[512];
     int button, x, y;
 
-    while(fgets(input, 2048, stdin))
+    while(fgets(input, sizeof(input), stdin))
     {
         walker = input;
         if(*walker == '[')

@@ -12,6 +12,19 @@
 
 #include "i3status.h"
 
+static struct ifaddrs *ifaddr = NULL;
+
+/*
+ * Call this function to update the ifaddrs,
+ * so that we can cache this structure between calls for wireless, ethernet, etc.
+ */
+void update_network_ifaddrs()
+{
+    if (ifaddr != NULL)
+        freeifaddrs(ifaddr);
+    getifaddrs(&ifaddr);
+}
+
 /*
  * Return the IP address for the given interface or "no IP" if the
  * interface is up and running but hasn't got an IP address yet
@@ -22,10 +35,8 @@ const char *get_ip_addr(const char *interface) {
     socklen_t len = sizeof(struct sockaddr_in);
     memset(part, 0, sizeof(part));
 
-    struct ifaddrs *ifaddr, *addrp;
+    struct ifaddrs *addrp;
     bool found = false;
-
-    getifaddrs(&ifaddr);
 
     if (ifaddr == NULL)
         return NULL;
@@ -44,23 +55,18 @@ const char *get_ip_addr(const char *interface) {
             continue;
         found = true;
         if ((addrp->ifa_flags & IFF_RUNNING) == 0) {
-            freeifaddrs(ifaddr);
             return NULL;
         }
     }
 
     if (addrp == NULL) {
-        freeifaddrs(ifaddr);
         return (found ? "no IP" : NULL);
     }
 
     int ret;
     if ((ret = getnameinfo(addrp->ifa_addr, len, part, sizeof(part), NULL, 0, NI_NUMERICHOST)) != 0) {
         fprintf(stderr, "i3status: getnameinfo(): %s\n", gai_strerror(ret));
-        freeifaddrs(ifaddr);
         return "no IP";
     }
-
-    freeifaddrs(ifaddr);
     return part;
 }

@@ -213,6 +213,7 @@ void print_time(yajl_gen json_gen, char *buffer, const char *title, const char *
 #ifdef DDATE
 void print_ddate(yajl_gen json_gen, char *buffer, const char *format, time_t t);
 #endif
+void update_network_ifaddrs();
 const char *get_ip_addr(const char *interface);
 void print_wireless_info(yajl_gen json_gen, char *buffer, const char *interface, const char *format_up, const char *format_down);
 #ifdef RUN_WATCH
