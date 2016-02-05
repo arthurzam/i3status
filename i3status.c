@@ -62,7 +62,9 @@ cfg_t *cfg, *cfg_general, *cfg_section;
 
 void **cur_instance;
 
+#ifdef PULSE
 pthread_t main_thread;
+#endif
 
 /*
  * Set the exit_upon_signal flag, because one cannot do anything in a safe
@@ -330,7 +332,7 @@ int main(int argc, char *argv[]) {
         CFG_CUSTOM_COLOR_OPTS,
         CFG_CUSTOM_MIN_WIDTH_OPT,
         CFG_END()};
-
+#ifdef MOD_IPV6
     cfg_opt_t ipv6_opts[] = {
         CFG_STR("format_up", "%ip", CFGF_NONE),
         CFG_STR("format_down", "no IPv6", CFGF_NONE),
@@ -338,7 +340,7 @@ int main(int argc, char *argv[]) {
         CFG_CUSTOM_COLOR_OPTS,
         CFG_CUSTOM_MIN_WIDTH_OPT,
         CFG_END()};
-
+#endif
     cfg_opt_t battery_opts[] = {
         CFG_STR("format", "%status %percentage %remaining", CFGF_NONE),
         CFG_STR("format_down", "No battery", CFGF_NONE),
@@ -457,7 +459,9 @@ int main(int argc, char *argv[]) {
         CFG_SEC("disk", disk_opts, CFGF_TITLE | CFGF_MULTI),
 #endif
         CFG_SEC("volume", volume_opts, CFGF_TITLE | CFGF_MULTI),
+#ifdef MOD_IPV6
         CFG_SEC("ipv6", ipv6_opts, CFGF_NONE),
+#endif
         CFG_SEC("time", time_opts, CFGF_NONE),
         CFG_SEC("tztime", tztime_opts, CFGF_TITLE | CFGF_MULTI),
 #ifdef DDATE
@@ -484,7 +488,9 @@ int main(int argc, char *argv[]) {
     struct sigaction action;
     memset(&action, 0, sizeof(struct sigaction));
     action.sa_handler = fatalsig;
+#ifdef PULSE
     main_thread = pthread_self();
+#endif
 
     /* Exit upon SIGPIPE because when we have nowhere to write to, gathering system
      * information is pointless. Also exit explicitly on SIGTERM and SIGINT because
@@ -528,6 +534,7 @@ int main(int argc, char *argv[]) {
     if (cfg_general == NULL)
         die("Could not get section \"general\"\n");
 
+#ifndef OUTPUT_ONLY_I3BAR
     char *output_str = cfg_getstr(cfg_general, "output_format");
     if (strcasecmp(output_str, "auto") == 0) {
         fprintf(stderr, "i3status: trying to auto-detect output_format setting\n");
@@ -555,11 +562,11 @@ int main(int argc, char *argv[]) {
     else
         die("Unknown output format: \"%s\"\n", output_str);
 
-    const char *separator = cfg_getstr(cfg_general, "separator");
-
     /* lemonbar needs % to be escaped with another % */
     pct_mark = (output_format == O_LEMONBAR) ? "%%" : "%";
+#endif
 
+    const char *separator = cfg_getstr(cfg_general, "separator");
     // if no custom separator has been provided, use the default one
     if (strcasecmp(separator, "default") == 0)
         separator = get_default_separator();
@@ -611,6 +618,7 @@ int main(int argc, char *argv[]) {
 
     void **per_instance = calloc(cfg_size(cfg, "order"), sizeof(*per_instance));
 
+#ifdef I3BAR_CLICKS
     if (output_format == O_I3BAR) {
         pthread_t _events_thread;
         if(pthread_create(&_events_thread, NULL, events_thread, NULL)) {
@@ -618,6 +626,7 @@ int main(int argc, char *argv[]) {
             return 1;
         }
     }
+#endif
 
     while (1) {
         if (exit_upon_signal) {
@@ -640,13 +649,13 @@ int main(int argc, char *argv[]) {
                 print_separator(separator);
 
             const char *current = cfg_getnstr(cfg, "order", j);
-
+#ifdef MOD_IPV6
             CASE_SEC("ipv6") {
                 SEC_OPEN_MAP("ipv6");
                 print_ipv6_info(json_gen, buffer, cfg_getstr(sec, "format_up"), cfg_getstr(sec, "format_down"));
                 SEC_CLOSE_MAP;
             }
-
+#endif
             CASE_SEC_TITLE("wireless") {
                 SEC_OPEN_MAP("wireless");
                 const char *interface = NULL;

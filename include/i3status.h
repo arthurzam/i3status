@@ -1,23 +1,35 @@
 #ifndef _I3STATUS_H
 #define _I3STATUS_H
 
-enum { O_DZEN2,
+enum output_format_t {
+       O_DZEN2,
        O_XMOBAR,
        O_I3BAR,
        O_LEMONBAR,
        O_TERM,
-       O_NONE } output_format;
+       O_NONE };
+#ifdef OUTPUT_ONLY_I3BAR
+#define output_format O_I3BAR
+#else
+enum output_format_t output_format;
+#endif
 
 enum { M_PANGO,
        M_NONE } markup_format;
 
-enum { MOUSE_LEFT = 1,
+#ifdef I3BAR_CLICKS
+enum mouse_event { MOUSE_LEFT = 1,
        MOUSE_MIDDLE = 2,
        MOUSE_RIGHT = 3,
        MOUSE_WHEEL_UP = 4,
-       MOUSE_WHEEL_DOWN = 5 } mouse_event;
+       MOUSE_WHEEL_DOWN = 5 };
+#endif
 
+#ifdef OUTPUT_ONLY_I3BAR
+#define pct_mark "%"
+#else
 char *pct_mark;
+#endif
 
 #include <stdbool.h>
 #include <confuse.h>
@@ -204,7 +216,9 @@ typedef enum {
 } net_type_t;
 const char *first_eth_interface(const net_type_t type);
 
+#ifdef MOD_IPV6
 void print_ipv6_info(yajl_gen json_gen, char *buffer, const char *format_up, const char *format_down);
+#endif
 #ifdef DISK_INFO
 void print_disk_info(yajl_gen json_gen, char *buffer, const char *path, const char *format, const char *format_not_mounted, const char *prefix_type, const char *threshold_type, const double low_threshold);
 #endif
@@ -248,9 +262,13 @@ extern cfg_t *cfg, *cfg_general, *cfg_section;
 
 extern void **cur_instance;
 
+#ifdef PULSE
 extern pthread_t main_thread;
+#endif
 
+#ifdef I3BAR_CLICKS
 void *events_thread(void *args);
 
 void mouse_volume(int event, const char *device, const char *mixer, int mixer_idx);
+#endif
 #endif

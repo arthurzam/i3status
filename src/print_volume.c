@@ -305,6 +305,7 @@ out:
     OUTPUT_FULL_TEXT(buffer);
 }
 
+#ifdef I3BAR_CLICKS
 void mouse_volume(int event, const char *device, const char *mixer, int mixer_idx) {
 #ifdef LINUX
     int pbval;
@@ -349,3 +350,4 @@ void mouse_volume(int event, const char *device, const char *mixer, int mixer_id
     }
 #endif
 }
+#endif
