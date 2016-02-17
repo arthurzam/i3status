@@ -385,12 +385,13 @@ int main(int argc, char *argv[]) {
         CFG_CUSTOM_COLOR_OPTS,
         CFG_CUSTOM_MIN_WIDTH_OPT,
         CFG_END()};
-
+#ifdef CPU_USAGE
     cfg_opt_t usage_opts[] = {
         CFG_STR("format", "%usage", CFGF_NONE),
         CFG_CUSTOM_ALIGN_OPT,
         CFG_CUSTOM_MIN_WIDTH_OPT,
         CFG_END()};
+#endif
 #ifdef TEMPERATURE
     cfg_opt_t temp_opts[] = {
         CFG_STR("format", "%degrees C", CFGF_NONE),
@@ -468,7 +469,9 @@ int main(int argc, char *argv[]) {
         CFG_SEC("ddate", ddate_opts, CFGF_NONE),
 #endif
         CFG_SEC("load", load_opts, CFGF_NONE),
+#ifdef CPU_USAGE
         CFG_SEC("cpu_usage", usage_opts, CFGF_NONE),
+#endif
 #ifdef BRIGHTNESS
         CFG_SEC("brightness", brightness_opts, CFGF_NONE),
 #endif
@@ -756,12 +759,13 @@ int main(int argc, char *argv[]) {
                 SEC_CLOSE_MAP;
             }
 #endif
-
+#ifdef CPU_USAGE
             CASE_SEC("cpu_usage") {
                 SEC_OPEN_MAP("cpu_usage");
                 print_cpu_usage(json_gen, buffer, cfg_getstr(sec, "format"));
                 SEC_CLOSE_MAP;
             }
+#endif
         }
         if (output_format == O_I3BAR) {
             yajl_gen_array_close(json_gen);

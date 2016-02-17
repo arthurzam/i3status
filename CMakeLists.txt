@@ -12,6 +12,7 @@ OPTION(MODULE_TEMPERATURE "Enable cpu temperature module" OFF)
 OPTION(MODULE_DDATE "Enable ddate module" OFF)
 OPTION(MODULE_DISK_INFO "Enable disk module" OFF)
 OPTION(MODULE_IPV6 "Enable ipv6 module" OFF)
+OPTION(MODULE_CPU_USAGE "Enable cpu usage module" OFF)
 
 OPTION(I3BAR_CLICKS_EVENTS "Enable i3bar click events listener" ON)
 OPTION(OUTPUT_ONLY_I3BAR "Output format is only i3bar" ON)
@@ -36,7 +37,6 @@ set(SRC
     src/general.c
     src/output.c
     src/print_battery_info.c
-    src/print_cpu_usage.c
     src/print_eth_info.c
     src/print_ip_addr.c
     src/print_load.c
@@ -108,6 +108,11 @@ if(MODULE_IPV6)
     add_definitions(-DMOD_IPV6)
 endif()
 
+if(MODULE_CPU_USAGE)
+    list(APPEND SRC src/print_cpu_usage.c)
+    add_definitions(-DCPU_USAGE)
+endif()
+
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     PKG_CHECK_MODULES(LIBNL libnl-genl-3.0 REQUIRED)
     include_directories(${LIBNL_INCLUDE_DIRS})
@@ -121,5 +126,8 @@ if (${CMAKE_BUILD_TYPE} STREQUAL "Release")
     endif()
 endif()
 
-add_executable(${PROJECT_NAME} ${SRC} ${HDR})
+add_executable(${PROJECT_NAME} ${SRC} ${HDR} i3status.conf)
 target_link_libraries(${PROJECT_NAME} ${LIBS})
+
+install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
+install(FILES i3status.conf DESTINATION ${DESTDIR}/etc COMPONENT config)

@@ -166,7 +166,7 @@ char *pct_mark;
 
 #define END_COLOR                                                             \
     do {                                                                      \
-        if (cfg_getbool(cfg_general, "colors") && output_format != O_I3BAR) { \
+        if (output_format != O_I3BAR && cfg_getbool(cfg_general, "colors")) { \
             outwalk += sprintf(outwalk, "%s", endcolor());                    \
         }                                                                     \
     } while (0)
@@ -237,7 +237,9 @@ void print_path_exists(yajl_gen json_gen, char *buffer, const char *title, const
 #ifdef TEMPERATURE
 void print_cpu_temperature_info(yajl_gen json_gen, char *buffer, int zone, const char *path, const char *format, int);
 #endif
+#ifdef CPU_USAGE
 void print_cpu_usage(yajl_gen json_gen, char *buffer, const char *format);
+#endif
 void print_eth_info(yajl_gen json_gen, char *buffer, const char *interface, const char *format_up, const char *format_down);
 void print_load(yajl_gen json_gen, char *buffer, const char *format, const float max_threshold);
 void print_volume(yajl_gen json_gen, char *buffer, const char *fmt, const char *fmt_muted, const char *device, const char *mixer, int mixer_idx);
