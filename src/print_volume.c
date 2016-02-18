@@ -316,37 +316,41 @@ void mouse_volume(int event, const char *device, const char *mixer, int mixer_id
     if(!init_volume_mixer(device, mixer, mixer_idx))
         return;
 
-    if(event == MOUSE_MIDDLE)
-    {
-        if (snd_mixer_selem_has_playback_switch(elem)) {
-            if ((err = snd_mixer_selem_get_playback_switch(elem, 0, &pbval)) < 0)
-                fprintf(stderr, "i3status: ALSA: playback_switch: %s\n", snd_strerror(err));
-            if ((err = snd_mixer_selem_set_playback_switch(elem, 0, !pbval)) < 0)
-                fprintf(stderr, "i3status: ALSA: playback_switch: %s\n", snd_strerror(err));
-        }
-    }
-    else if(event == MOUSE_WHEEL_UP || event == MOUSE_WHEEL_DOWN)
-    {
-        /* Get the volume range to convert the volume later */
-        snd_mixer_selem_get_playback_volume_range(elem, &min, &max);
+    switch(event) {
+        case MOUSE_MIDDLE: // mute / unmute
+            if (snd_mixer_selem_has_playback_switch(elem)) {
+                if ((err = snd_mixer_selem_get_playback_switch(elem, 0, &pbval)) < 0)
+                    fprintf(stderr, "i3status: ALSA: playback_switch: %s\n", snd_strerror(err));
+                if ((err = snd_mixer_selem_set_playback_switch(elem, 0, !pbval)) < 0)
+                    fprintf(stderr, "i3status: ALSA: playback_switch: %s\n", snd_strerror(err));
+            }
+            break;
+        case MOUSE_WHEEL_DOWN: // dec -3%
+        case MOUSE_WHEEL_UP:   // inc +3%
+            snd_mixer_selem_get_playback_volume_range(elem, &min, &max);
 
-        snd_mixer_handle_events(m);
-        snd_mixer_selem_get_playback_volume(elem, 0, &val);
+            snd_mixer_handle_events(m);
+            snd_mixer_selem_get_playback_volume(elem, 0, &val);
 
-        change = max * 3 / 100;
-        if(event == MOUSE_WHEEL_UP)
-        {
-            val += change;
-            if(val > max)
-                val = max;
-        }
-        else
-        {
-            val -= change;
-            if(val < 0)
-                val = 0;
-        }
-        snd_mixer_selem_set_playback_volume(elem, 0, val);
+            change = max * 3 / 100;
+            if(event == MOUSE_WHEEL_UP) {
+                val += change;
+                if(val > max)
+                    val = max;
+            } else {
+                val -= change;
+                if(val < 0)
+                    val = 0;
+            }
+            snd_mixer_selem_set_playback_volume(elem, 0, val);
+            break;
+        case MOUSE_RIGHT: // set volume to 100%
+            snd_mixer_selem_get_playback_volume_range(elem, &min, &max);
+            snd_mixer_selem_set_playback_volume(elem, 0, max);
+            break;
+        case MOUSE_LEFT: // set volume to 0%
+            snd_mixer_selem_set_playback_volume(elem, 0, 0);
+            break;
     }
 #endif
 }

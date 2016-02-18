@@ -17,8 +17,7 @@ void print_language(yajl_gen json_gen, char *buffer) {
     XKeyboardState values;
     const char* lan_str = NULL;
 
-    if(dpy == NULL)
-    {
+    if(dpy == NULL) {
         dpy = XOpenDisplay(NULL);
         if (dpy == NULL) {
             fprintf(stderr, "language:  unable to open display\n");
@@ -30,25 +29,20 @@ void print_language(yajl_gen json_gen, char *buffer) {
     XGetKeyboardControl(dpy, &values);
     int lan = values.led_mask;
 
-    if((lan & 2) == 0)
-    {
+    if((lan & 2) == 0) {
         START_COLOR("color_degraded");
     }
 
-    if(lan >= 1000)
-    {
+    if(lan >= 1000) {
         lan_str = ((lan & 1) == 0) ? "Hebrew" : "HEBREW";
-    }
-    else
-    {
+    } else {
         lan_str = ((lan & 1) == 0) ? "English" : "ENGLISH";
     }
 
     strcpy(buffer, lan_str);
     outwalk += strlen(lan_str);
 
-    if((lan & 2) == 0)
-    {
+    if((lan & 2) == 0) {
         END_COLOR;
     }
     OUTPUT_FULL_TEXT(buffer);

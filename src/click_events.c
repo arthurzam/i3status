@@ -23,8 +23,7 @@ void* events_thread(void* args)
     char name[512], instance[512];
     int button, x, y;
 
-    while(fgets(input, sizeof(input), stdin))
-    {
+    while(fgets(input, sizeof(input), stdin)) {
         walker = input;
         if(*walker == '[')
             walker++;
