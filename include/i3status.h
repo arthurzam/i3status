@@ -149,7 +149,7 @@ char *pct_mark;
 
 #define START_COLOR(colorstr)                                                                \
     do {                                                                                     \
-        if (cfg_getbool(cfg_general, "colors")) {                                            \
+        if (cfg_general_colors) {                                            \
             const char *_val = NULL;                                                         \
             if (cfg_section)                                                                 \
                 _val = cfg_getstr(cfg_section, colorstr);                                    \
@@ -166,7 +166,7 @@ char *pct_mark;
 
 #define END_COLOR                                                             \
     do {                                                                      \
-        if (output_format != O_I3BAR && cfg_getbool(cfg_general, "colors")) { \
+        if (output_format != O_I3BAR && cfg_general_colors) { \
             outwalk += sprintf(outwalk, "%s", endcolor());                    \
         }                                                                     \
     } while (0)
@@ -263,6 +263,8 @@ extern int general_socket;
 extern cfg_t *cfg, *cfg_general, *cfg_section;
 
 extern void **cur_instance;
+
+extern bool cfg_general_colors;
 
 #ifdef PULSE
 extern pthread_t main_thread;

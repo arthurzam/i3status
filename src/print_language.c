@@ -10,6 +10,9 @@
 
 #include "i3status.h"
 
+#define IS_NUMLOCK(val) ((val & 2) == 0)
+#define CAPSLOCK_STR(val,cap,uncap) (((val & 1) == 0) ? uncap : cap)
+
 void print_language(yajl_gen json_gen, char *buffer) {
 
     char *outwalk = buffer;
@@ -23,26 +26,27 @@ void print_language(yajl_gen json_gen, char *buffer) {
             fprintf(stderr, "language:  unable to open display\n");
             *buffer = '\0';
             OUTPUT_FULL_TEXT(buffer);
+            return;
         }
     }
 
     XGetKeyboardControl(dpy, &values);
     int lan = values.led_mask;
 
-    if((lan & 2) == 0) {
+    if(IS_NUMLOCK(lan)) {
         START_COLOR("color_degraded");
     }
 
     if(lan >= 1000) {
-        lan_str = ((lan & 1) == 0) ? "Hebrew" : "HEBREW";
+        lan_str = CAPSLOCK_STR(lan, "HEBREW", "Hebrew");
     } else {
-        lan_str = ((lan & 1) == 0) ? "English" : "ENGLISH";
+        lan_str = CAPSLOCK_STR(lan, "ENGLISH", "English");
     }
 
     strcpy(buffer, lan_str);
     outwalk += strlen(lan_str);
 
-    if((lan & 2) == 0) {
+    if(IS_NUMLOCK(lan)) {
         END_COLOR;
     }
     OUTPUT_FULL_TEXT(buffer);

@@ -62,6 +62,8 @@ cfg_t *cfg, *cfg_general, *cfg_section;
 
 void **cur_instance;
 
+bool cfg_general_colors;
+
 #ifdef PULSE
 pthread_t main_thread;
 #endif
@@ -530,7 +532,8 @@ int main(int argc, char *argv[]) {
     if (cfg_parse(cfg, configfile) == CFG_PARSE_ERROR)
         return EXIT_FAILURE;
 
-    if (cfg_size(cfg, "order") == 0)
+    unsigned int _order_size = cfg_size(cfg, "order");
+    if (_order_size == 0)
         die("Your 'order' array is empty. Please fix your config.\n");
 
     cfg_general = cfg_getsec(cfg, "general");
@@ -569,6 +572,8 @@ int main(int argc, char *argv[]) {
     pct_mark = (output_format == O_LEMONBAR) ? "%%" : "%";
 #endif
 
+    cfg_general_colors = cfg_getbool(cfg_general, "colors");
+
     const char *separator = cfg_getstr(cfg_general, "separator");
     // if no custom separator has been provided, use the default one
     if (strcasecmp(separator, "default") == 0)
@@ -594,7 +599,11 @@ int main(int argc, char *argv[]) {
     if (output_format == O_I3BAR) {
         /* Initialize the i3bar protocol. See i3/docs/i3bar-protocol
          * for details. */
+#ifdef I3BAR_CLICKS
         printf("{\"version\":1, \"click_events\": true}\n[\n");
+#else
+        printf("{\"version\":1}\n[\n");
+#endif
         fflush(stdout);
         yajl_gen_array_open(json_gen);
         yajl_gen_clear(json_gen);
@@ -618,8 +627,7 @@ int main(int argc, char *argv[]) {
      * information on screen, more than 1024 characters for the full line
      * (!), not individual plugins, seem very unlikely. */
     char buffer[4096];
-
-    void **per_instance = calloc(cfg_size(cfg, "order"), sizeof(*per_instance));
+    void **per_instance = calloc(_order_size, sizeof(*per_instance));
 
 #ifdef I3BAR_CLICKS
     if (output_format == O_I3BAR) {
@@ -646,7 +654,7 @@ int main(int argc, char *argv[]) {
 
         update_network_ifaddrs();
 
-        for (j = 0; j < cfg_size(cfg, "order"); j++) {
+        for (j = 0; j < _order_size; j++) {
             cur_instance = per_instance + j;
             if (j > 0)
                 print_separator(separator);
