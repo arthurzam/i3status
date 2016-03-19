@@ -96,7 +96,7 @@ static long backlight_get (xcb_connection_t *conn, xcb_randr_output_t output)
 
 static float get_brightness()
 {
-    float res = -1;
+    int res = -1;
 
     static xcb_connection_t *conn = NULL;
     xcb_generic_error_t *error;
@@ -168,7 +168,11 @@ static float get_brightness()
                     int32_t *values = xcb_randr_query_output_property_valid_values (prop_reply);
                     min = values[0];
                     max = values[1];
-                    res = (cur - min) * 100 / (max - min);
+                    {
+                        float avgf = (cur - min) * 100 / (max - min);
+                        res = (int)avgf;
+                        res = (avgf - res < 0.5 ? res : (res + 1));
+                    }
                     free (prop_reply);
                     break;
                 }
