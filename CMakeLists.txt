@@ -19,8 +19,13 @@ OPTION(OUTPUT_ONLY_I3BAR "Output format is only i3bar" ON)
 
 include_directories(include)
 
+FIND_PACKAGE(PkgConfig REQUIRED)
+pkg_check_modules(LIBCONFUSE libconfuse REQUIRED)
+include_directories(${LIBCONFUSE_INCLUDE_DIRS})
+link_directories(${LIBCONFUSET_LIBRARY_DIRS})
+
 set(LIBS
-    -lconfuse
+    -l${LIBCONFUSE_LIBRARIES}
     -lyajl
     -lpthread
 )
@@ -46,7 +51,6 @@ set(SRC
     src/print_wireless_info.c
 )
 
-FIND_PACKAGE(PkgConfig REQUIRED)
 
 function(USE_SRC)
     set(oneValueArgs FLAG)
